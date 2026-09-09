@@ -14,6 +14,7 @@ import settings from "./routes/settings.js";
 import holidays from "./routes/holidays.js";
 import payslips from "./routes/payslips.js";
 import { auth, errorHandler } from "./middleware/auth.js";
+import { databaseMiddleware } from "./config/db.js";
 const app = express(),
   allowedOrigin = (origin, cb) => {
     const configured = (process.env.CLIENT_URL || "")
@@ -32,7 +33,8 @@ app.use(
   express.json({ limit: "1mb" }),
   cookieParser(),
 );
-app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+app.use("/api", databaseMiddleware);
+app.get("/api/health", (req, res) => res.json({ status: "ok", database: "connected" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", auth, dashboard);
 app.use("/api/employees", auth, employees);

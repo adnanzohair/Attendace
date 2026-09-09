@@ -5,6 +5,12 @@ import { User } from "../models/index.js";
 import { AppError, asyncHandler } from "../utils/http.js";
 import { auth } from "../middleware/auth.js";
 const r = Router();
+export const authCookieOptions = (environment = process.env.NODE_ENV) => ({
+  httpOnly: true,
+  sameSite: environment === "production" ? "none" : "lax",
+  secure: environment === "production",
+  maxAge: 28800000,
+});
 r.post(
   "/login",
   asyncHandler(async (req, res) => {
@@ -23,12 +29,7 @@ r.post(
       { expiresIn: "8h" },
     );
     res
-      .cookie("token", token, {
-        httpOnly: true,
-       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-       secure: process.env.NODE_ENV === "production",
-        maxAge: 28800000,
-      })
+      .cookie("token", token, authCookieOptions())
       .json({
         user: {
           id: user._id,
@@ -39,6 +40,9 @@ r.post(
       });
   }),
 );
-r.post("/logout", (req, res) => res.clearCookie("token").status(204).end());
+r.post("/logout", (req, res) => {
+  const { maxAge, ...options } = authCookieOptions();
+  res.clearCookie("token", options).status(204).end();
+});
 r.get("/me", auth, (req, res) => res.json({ user: req.user }));
 export default r;
