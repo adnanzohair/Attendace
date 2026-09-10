@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { messageOf } from "../services/api";
+import AppFooter from "../components/AppFooter";
+import { Link } from "react-router-dom";
 export default function Login() {
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
@@ -23,7 +25,8 @@ export default function Login() {
     }
   }
   return (
-    <div className="grid min-h-screen place-items-center bg-ink p-4">
+    <div className="flex min-h-screen flex-col bg-ink">
+      <div className="grid flex-1 place-items-center p-4">
       <form onSubmit={submit} className="card w-full max-w-md p-8">
         <div className="mb-8">
           <div className="text-2xl font-bold text-ink">Welcome to Attendly</div>
@@ -55,7 +58,10 @@ export default function Login() {
         <button className="btn-primary w-full" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
+        <div className="mt-5 text-center"><Link to="/employee/login" className="text-sm font-semibold text-brand-700">Employee Portal Login →</Link></div>
       </form>
+      </div>
+      <AppFooter dark />
     </div>
   );
 }

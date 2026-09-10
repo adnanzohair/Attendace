@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Mail, Printer } from "lucide-react";
+import { BadgeCheck, Mail, Printer } from "lucide-react";
 import { api, messageOf } from "../services/api";
 import { hours, Spinner } from "../components/ui";
 import {
   deductionControl,
   shortHoursControl,
 } from "../utils/payslipOverride";
+import { payslipPublicationPayload } from "../utils/payslipPublicationPayload";
 
 const dateKey = (date) =>
   [
@@ -84,7 +85,8 @@ export default function Payslips() {
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [mailStatus, setMailStatus] = useState({ configured: false, sender: null }),
-    [sending, setSending] = useState(false);
+    [sending, setSending] = useState(false),
+    [publishing, setPublishing] = useState(false);
   useEffect(() => {
     api
       .get("/employees", { params: { limit: 500 } })
@@ -170,6 +172,31 @@ export default function Payslips() {
       setNotice(data.message);
     } catch (e) { setError(messageOf(e)); }
     finally { setSending(false); }
+  }
+  async function publishPayslip() {
+    if (!payslip) return;
+    setError(""); setNotice(""); setPublishing(true);
+    const shortControl = shortHoursControl(payslip.deductions.shortHoursCalculated, adjustments.shortHoursOverride, shortHoursManual);
+    const taxControl = deductionControl(payslip.deductions.incomeTaxCalculated, adjustments.incomeTaxOverride, incomeTaxManual);
+    const leaveControl = deductionControl(payslip.deductions.unpaidLeaveCalculated, adjustments.unpaidLeaveOverride, unpaidLeaveManual);
+    try {
+      const payload = payslipPublicationPayload({
+        startDate,
+        endDate,
+        adjustments,
+        overrides: {
+          shortHoursOverride: shortControl.queryValue,
+          incomeTaxOverride: taxControl.queryValue,
+          unpaidLeaveOverride: leaveControl.queryValue,
+        },
+      });
+      const { data } = await api.post(`/payslips/${employeeId}/publish`, payload);
+      setNotice(data.message);
+    } catch (requestError) {
+      setError(messageOf(requestError));
+    } finally {
+      setPublishing(false);
+    }
   }
   async function applyShortHoursOverride() {
     await requestPayslip(adjustments);
@@ -546,6 +573,8 @@ export default function Payslips() {
           applying={loading}
           onEmail={emailPayslip}
           sending={sending}
+          onPublish={publishPayslip}
+          publishing={publishing}
         />
       )}
     </>
@@ -562,6 +591,8 @@ function CompanySlip({
   applying,
   onEmail,
   sending,
+  onPublish,
+  publishing,
 }) {
   const {
     employee,
@@ -580,6 +611,10 @@ function CompanySlip({
   return (
     <article className="payslip mx-auto max-w-4xl bg-white p-5 text-[11px] text-black shadow-sm print:p-0">
       <div className="no-print mb-3 flex flex-wrap justify-end gap-2">
+        <button className="btn-primary" disabled={publishing || sending || !employee.email} onClick={onPublish}>
+          <BadgeCheck size={17} />
+          {publishing ? "Publishing…" : "Publish to employee portal"}
+        </button>
         <button className="btn-secondary" disabled={sending || !employee.email} onClick={onEmail}>
           <Mail size={17} />
           {sending ? "Sending…" : `Email PDF${employee.email ? ` to ${employee.email}` : ""}`}

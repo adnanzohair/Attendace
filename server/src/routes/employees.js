@@ -1,8 +1,10 @@
 import { Router } from "express";
 import multer from "multer";
 import XLSX from "xlsx";
-import { Attendance, Employee } from "../models/index.js";
+import { Attendance, Employee, EmployeeAccount } from "../models/index.js";
 import { AppError, asyncHandler, pageMeta } from "../utils/http.js";
+import { createAccountToken } from "../services/accountTokens.js";
+import { sendEmployeeAccountLink } from "../services/employeeAccountMailer.js";
 
 const r = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -84,6 +86,20 @@ r.post("/import", upload.single("file"), asyncHandler(async (req, res) => {
 }));
 
 r.post("/", asyncHandler(async (req, res) => res.status(201).json(await Employee.create(employeePayload(req.body)))));
+r.post("/:id/invite", asyncHandler(async (req, res) => {
+  const employee = await Employee.findById(req.params.id);
+  if (!employee || employee.status !== "active") throw new AppError(404, "Active employee not found");
+  const email = String(employee.email || "").trim().toLowerCase();
+  if (!email) throw new AppError(422, "Add a valid employee email before sending an invitation");
+  const existingAccount = await EmployeeAccount.findOne({ employee: employee._id });
+  if (existingAccount?.status === "active") throw new AppError(409, "This employee already has an active portal account. They can use Forgot Password if needed.");
+  const duplicate = await EmployeeAccount.findOne({ email, employee: { $ne: employee._id } });
+  if (duplicate) throw new AppError(409, "This email belongs to another employee portal account");
+  const token = createAccountToken();
+  const account = await EmployeeAccount.findOneAndUpdate({ employee: employee._id }, { $set: { email, status: "invited", inviteTokenHash: token.tokenHash, inviteExpiresAt: new Date(Date.now() + 3600000) } }, { upsert: true, new: true, runValidators: true });
+  await sendEmployeeAccountLink({ recipient: email, employeeName: employee.name, purpose: "activation", url: `${process.env.CLIENT_URL}/employee/activate/${token.rawToken}` });
+  res.json({ message: `Invitation sent to ${email}`, accountStatus: account.status });
+}));
 r.get("/:id", asyncHandler(async (req, res) => {
   const employee = await Employee.findById(req.params.id);
   if (!employee) throw new AppError(404, "Employee not found");

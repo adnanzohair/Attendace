@@ -1,13 +1,16 @@
 import axios from "axios";
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.DEV ? (import.meta.env.VITE_API_URL || "http://localhost:5000/api") : "/api",
   withCredentials: true,
 });
 api.interceptors.response.use(
   (r) => r,
   (r) => {
-    if (r.response?.status === 401 && location.pathname != "/login")
-      location.href = "/login";
+    const sessionProbe = /\/auth\/me$/.test(r.config?.url || "");
+    if (r.response?.status === 401 && !sessionProbe) {
+      const target = location.pathname.startsWith("/employee") ? "/employee/login" : "/login";
+      if (location.pathname !== target) location.href = target;
+    }
     return Promise.reject(r);
   },
 );

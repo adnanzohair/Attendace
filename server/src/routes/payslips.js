@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Attendance, Employee, Holiday, PayslipEmailLog, Settings } from "../models/index.js";
+import { Attendance, Employee, Holiday, PayslipEmailLog, PublishedPayslip, Settings } from "../models/index.js";
 import { AppError, asyncHandler } from "../utils/http.js";
 import { applyIncomeTaxOverride, applyShortHoursOverride, applyUnpaidLeaveOverride } from "../services/payrollCalculator.js";
 import { calculatePakistanSalaryTax } from "../services/pakistanIncomeTax.js";
@@ -9,6 +9,7 @@ import { calculateLeaveEntitlement } from "../services/leaveEntitlement.js";
 import { renderPayslipPdf } from "../services/payslipPdf.js";
 import { createPayslipMailer } from "../services/payslipMailer.js";
 import { publicMailStatus } from "../config/mail.js";
+import { createPublishedSnapshot } from "../services/payslipPublication.js";
 
 const r = Router();
 const DAY = 86400000;
@@ -167,6 +168,34 @@ r.post("/:id/email", asyncHandler(async (req, res) => {
     });
     throw new AppError(502, "Payslip email could not be sent. Check Gmail SMTP settings and the app password.");
   }
+}));
+
+r.post("/:id/publish", asyncHandler(async (req, res) => {
+  const payslip = await calculatePayslip(req.params.id, req.body || {});
+  if (!payslip.employee.email) throw new AppError(422, "Add the employee email before publishing");
+  const published = await PublishedPayslip.create({ ...createPublishedSnapshot(payslip), publishedBy: req.user._id });
+  try {
+    const pdf = await renderPayslipPdf(published.data);
+    const result = await createPayslipMailer().send({ recipient: payslip.employee.email, employeeName: payslip.employee.name, period: payslip.period, pdf });
+    published.delivery = { status: "sent", attempts: 1, messageId: result.messageId, lastAttemptAt: new Date() };
+  } catch (error) {
+    published.delivery = { status: "failed", attempts: 1, lastError: String(error.message).slice(0, 500), lastAttemptAt: new Date() };
+  }
+  await published.save();
+  res.status(201).json({ message: published.delivery.status === "sent" ? "Payslip published and emailed" : "Payslip published; email delivery failed and can be retried", payslip: published });
+}));
+r.post("/published/:id/retry-email", asyncHandler(async (req, res) => {
+  const published = await PublishedPayslip.findOne({ _id: req.params.id, status: "published" });
+  if (!published) throw new AppError(404, "Published payslip not found");
+  const pdf = await renderPayslipPdf(published.data);
+  const result = await createPayslipMailer().send({ recipient: published.data.employee.email, employeeName: published.data.employee.name, period: published.data.period, pdf });
+  published.delivery = { status: "sent", attempts: (published.delivery?.attempts || 0) + 1, messageId: result.messageId, lastAttemptAt: new Date() }; await published.save();
+  res.json({ message: "Payslip email sent" });
+}));
+r.post("/published/:id/void", asyncHandler(async (req, res) => {
+  const reason = String(req.body.reason || "").trim(); if (!reason) throw new AppError(422, "Reason is required");
+  const published = await PublishedPayslip.findOneAndUpdate({ _id: req.params.id, status: "published" }, { status: "void", voidReason: reason, voidedAt: new Date(), voidedBy: req.user._id }, { new: true });
+  if (!published) throw new AppError(404, "Published payslip not found"); res.json({ message: "Payslip voided. Generate and publish its replacement." });
 }));
 
 r.get("/:id", asyncHandler(async (req, res) => {

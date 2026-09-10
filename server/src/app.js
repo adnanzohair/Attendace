@@ -13,6 +13,8 @@ import reports from "./routes/reports.js";
 import settings from "./routes/settings.js";
 import holidays from "./routes/holidays.js";
 import payslips from "./routes/payslips.js";
+import employeeAuthRoutes from "./routes/employeeAuth.js";
+import employeePortalRoutes from "./routes/employeePortal.js";
 import { auth, errorHandler } from "./middleware/auth.js";
 import { databaseMiddleware } from "./config/db.js";
 const app = express(),
@@ -35,6 +37,8 @@ app.use(
 );
 app.use("/api", databaseMiddleware);
 app.get("/api/health", (req, res) => res.json({ status: "ok", database: "connected" }));
+app.use("/api/employee-portal/auth", employeeAuthRoutes);
+app.use("/api/employee-portal", employeePortalRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", auth, dashboard);
 app.use("/api/employees", auth, employees);

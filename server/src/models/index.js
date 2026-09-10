@@ -78,6 +78,23 @@ const employeeSchema = new Schema(
   },
   { timestamps: true },
 );
+const employeeAccountSchema = new Schema(
+  {
+    employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true, unique: true, index: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String, select: false },
+    status: { type: String, enum: ["invited", "active", "disabled"], default: "invited" },
+    inviteTokenHash: { type: String, select: false },
+    inviteExpiresAt: { type: Date, select: false },
+    resetTokenHash: { type: String, select: false },
+    resetExpiresAt: { type: Date, select: false },
+    passwordChangedAt: Date,
+    failedLoginAttempts: { type: Number, default: 0 },
+    lockedUntil: Date,
+    lastLoginAt: Date,
+  },
+  { timestamps: true },
+);
 const importSchema = new Schema(
   {
     sourceFile: { type: String, required: true },
@@ -248,9 +265,24 @@ const payslipEmailLogSchema = new Schema(
   },
   { timestamps: { createdAt: "attemptedAt", updatedAt: false } },
 );
+const publishedPayslipSchema = new Schema(
+  {
+    employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    periodStart: { type: String, required: true }, periodEnd: { type: String, required: true },
+    currency: { type: String, enum: ["PKR", "USD"], required: true }, netSalary: { type: Number, required: true },
+    data: { type: Schema.Types.Mixed, required: true, immutable: true }, templateVersion: { type: Number, default: 1, immutable: true },
+    status: { type: String, enum: ["published", "void"], default: "published" },
+    publishedBy: { type: Schema.Types.ObjectId, ref: "User", required: true }, publishedAt: { type: Date, default: Date.now },
+    voidedBy: { type: Schema.Types.ObjectId, ref: "User" }, voidedAt: Date, voidReason: String,
+    delivery: { status: { type: String, enum: ["pending", "sent", "failed"], default: "pending" }, attempts: { type: Number, default: 0 }, messageId: String, lastError: String, lastAttemptAt: Date },
+  }, { timestamps: true },
+);
+publishedPayslipSchema.index({ employee: 1, periodStart: 1, periodEnd: 1 }, { unique: true, partialFilterExpression: { status: "published" } });
 export const User = model("User", userSchema);
 export const Shift = model("Shift", shiftSchema);
 export const Employee = model("Employee", employeeSchema);
+export const EmployeeAccount = model("EmployeeAccount", employeeAccountSchema);
 export const ImportBatch = model("ImportBatch", importSchema);
 export const RawPunch = model("RawPunch", rawPunchSchema);
 export const Attendance = model("Attendance", attendanceSchema);
@@ -265,3 +297,4 @@ export const AttendanceException = model(
 export const Settings = model("Settings", settingsSchema);
 export const Holiday = model("Holiday", holidaySchema);
 export const PayslipEmailLog = model("PayslipEmailLog", payslipEmailLogSchema);
+export const PublishedPayslip = model("PublishedPayslip", publishedPayslipSchema);
