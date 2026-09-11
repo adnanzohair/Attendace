@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   CalendarHeart,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 const links = [
@@ -25,6 +26,7 @@ const links = [
   ["/payroll", "Payroll", Banknote],
   ["/payslips", "Payslips", ReceiptText],
   ["/settings", "Settings", Settings],
+  ["/admin-users", "Admin Users", ShieldCheck, true],
 ];
 export default function AppLayout() {
   const { user, logout } = useAuth(),
@@ -36,7 +38,7 @@ export default function AppLayout() {
           Attendly
         </div>
         <nav className="space-y-1 p-3">
-          {links.map(([to, label, Icon]) => (
+          {links.filter(([, , , ownerOnly]) => !ownerOnly || user?.role === "owner").map(([to, label, Icon]) => (
             <NavLink
               key={to}
               to={to}

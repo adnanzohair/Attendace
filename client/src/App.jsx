@@ -24,6 +24,8 @@ import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import MyAttendance from "./pages/employee/MyAttendance";
 import MyPayslips from "./pages/employee/MyPayslips";
 import MyProfile from "./pages/employee/MyProfile";
+import AdminActivate from "./pages/AdminActivate";
+import AdminUsers from "./pages/AdminUsers";
 function Protected() {
   const { user, loading } = useAuth();
   if (loading)
@@ -39,6 +41,10 @@ function EmployeeProtected() {
   if (loading) return <div className="grid min-h-screen place-items-center"><Spinner /></div>;
   return employee ? <EmployeeLayout /> : <Navigate to="/employee/login" replace />;
 }
+function OwnerPage() {
+  const { user } = useAuth();
+  return user?.role === "owner" ? <AdminUsers/> : <Navigate to="/dashboard" replace/>;
+}
 export default function App() {
   return (
     <Routes>
@@ -47,6 +53,7 @@ export default function App() {
       <Route path="/employee/activate/:token" element={<EmployeeActivate />} />
       <Route path="/employee/forgot-password" element={<EmployeeForgotPassword />} />
       <Route path="/employee/reset-password/:token" element={<EmployeeResetPassword />} />
+      <Route path="/admin/activate/:token" element={<AdminActivate />} />
       <Route element={<EmployeeProtected />}>
         <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
         <Route path="/employee/attendance" element={<MyAttendance />} />
@@ -67,6 +74,7 @@ export default function App() {
         <Route path="/payroll" element={<Payroll />} />
         <Route path="/payslips" element={<Payslips />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/admin-users" element={<OwnerPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

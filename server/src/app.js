@@ -15,6 +15,7 @@ import holidays from "./routes/holidays.js";
 import payslips from "./routes/payslips.js";
 import employeeAuthRoutes from "./routes/employeeAuth.js";
 import employeePortalRoutes from "./routes/employeePortal.js";
+import adminUsers from "./routes/adminUsers.js";
 import { auth, errorHandler } from "./middleware/auth.js";
 import { databaseMiddleware } from "./config/db.js";
 const app = express(),
@@ -40,6 +41,7 @@ app.get("/api/health", (req, res) => res.json({ status: "ok", database: "connect
 app.use("/api/employee-portal/auth", employeeAuthRoutes);
 app.use("/api/employee-portal", employeePortalRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/admin-users", adminUsers);
 app.use("/api/dashboard", auth, dashboard);
 app.use("/api/employees", auth, employees);
 app.use("/api/employee-reports", auth, employeeReports);
