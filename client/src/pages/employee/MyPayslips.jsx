@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, Eye, ExternalLink, X } from "lucide-react";
 import { api, messageOf } from "../../services/api";
 import { employeePayslipPdfUrl } from "../../utils/employeePayslipPdfUrl";
+import { payslipPeriodLabel } from "../../utils/payslipPeriodLabel";
 
 export default function MyPayslips() {
   const [items, setItems] = useState([]);
@@ -18,7 +19,7 @@ export default function MyPayslips() {
     {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-red-700">{error}</div>}
     <div className="grid gap-4">
       {items.map((payslip) => <div className="card flex flex-wrap items-center justify-between gap-3 p-4" key={payslip._id}>
-        <div><b>{payslip.periodStart} — {payslip.periodEnd}</b><div className="muted">Net payable: {payslip.currency} {Number(payslip.netSalary).toLocaleString()}</div></div>
+        <div><b>{payslipPeriodLabel(payslip.periodStart, payslip.periodEnd)}</b><div className="muted">Net payable: {payslip.currency} {Number(payslip.netSalary).toLocaleString()}</div></div>
         <div className="flex flex-wrap gap-2">
           <button className="btn-secondary" onClick={() => setSelected(payslip)}><Eye size={16}/> View full payslip</button>
           <a className="btn-primary" href={employeePayslipPdfUrl(payslip._id)}><Download size={16}/> Download PDF</a>
@@ -29,7 +30,7 @@ export default function MyPayslips() {
 
     {selected && <section className="card mt-5 overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
-        <div><h2 className="text-lg font-bold">Published payslip</h2><p className="muted">{selected.periodStart} to {selected.periodEnd} · Exact emailed PDF format</p></div>
+        <div><h2 className="text-lg font-bold">Published payslip</h2><p className="muted">{payslipPeriodLabel(selected.periodStart, selected.periodEnd)}</p></div>
         <div className="flex flex-wrap gap-2">
           <a className="btn-secondary" href={employeePayslipPdfUrl(selected._id, true)} target="_blank" rel="noreferrer"><ExternalLink size={16}/> Open full screen</a>
           <button type="button" className="btn-secondary" onClick={() => setSelected(null)}><X size={16}/> Close</button>
