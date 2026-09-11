@@ -10,6 +10,8 @@ import { renderPayslipPdf } from "../services/payslipPdf.js";
 import { createPayslipMailer } from "../services/payslipMailer.js";
 import { publicMailStatus } from "../config/mail.js";
 import { createPublishedSnapshot } from "../services/payslipPublication.js";
+import { payslipContentDisposition } from "../services/payslipDisposition.js";
+import { buildPayrollRegisterFilter, summarizePayroll } from "../services/payrollRegister.js";
 
 const r = Router();
 const DAY = 86400000;
@@ -139,6 +141,34 @@ r.get("/mail/status", (req, res) => res.json(publicMailStatus()));
 r.post("/mail/test", asyncHandler(async (req, res) => {
   await createPayslipMailer().verify();
   res.json({ message: "Gmail SMTP connection is working" });
+}));
+
+r.get("/published", asyncHandler(async (req, res) => {
+  const { startDate, endDate } = req.query;
+  if ((startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) || (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) || (startDate && endDate && startDate > endDate)) {
+    throw new AppError(422, "Choose a valid payroll date range");
+  }
+  const filter = buildPayrollRegisterFilter(req.query);
+  if (req.query.status === "email_failed") {
+    filter.status = "published";
+    filter["delivery.status"] = "failed";
+  }
+  const payslips = await PublishedPayslip.find(filter)
+    .sort({ periodEnd: -1, "data.employee.name": 1 })
+    .select("employee employeeId periodStart periodEnd currency netSalary data.employee data.earnings data.deductions status publishedAt delivery voidReason voidedAt")
+    .lean();
+  res.json({ data: payslips, summary: summarizePayroll(payslips) });
+}));
+
+r.get("/published/:id/download", asyncHandler(async (req, res) => {
+  const payslip = await PublishedPayslip.findById(req.params.id).lean();
+  if (!payslip) throw new AppError(404, "Published payslip not found");
+  const pdf = await renderPayslipPdf(payslip.data);
+  res.set({
+    "Content-Type": "application/pdf",
+    "Content-Disposition": payslipContentDisposition({ inline: req.query.inline === "1", startDate: payslip.periodStart, endDate: payslip.periodEnd }),
+    "Cache-Control": "private, no-store",
+  }).send(pdf);
 }));
 
 r.post("/:id/email", asyncHandler(async (req, res) => {

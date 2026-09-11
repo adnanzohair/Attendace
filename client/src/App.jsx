@@ -15,7 +15,7 @@ import Monthly from "./pages/Monthly";
 import Settings from "./pages/Settings";
 import Holidays from "./pages/Holidays";
 import Payslips from "./pages/Payslips";
-import ComingSoon from "./pages/ComingSoon";
+import Payroll from "./pages/Payroll";
 import { useEmployeeAuth } from "./context/EmployeeAuthContext";
 import EmployeeLayout from "./layouts/EmployeeLayout";
 import EmployeeLogin from "./pages/employee/EmployeeLogin";
@@ -64,7 +64,7 @@ export default function App() {
         <Route path="/attendance/monthly" element={<Monthly />} />
         <Route path="/attendance/:id" element={<AttendanceDetail />} />
         <Route path="/holidays" element={<Holidays />} />
-        <Route path="/payroll" element={<ComingSoon title="Payroll" />} />
+        <Route path="/payroll" element={<Payroll />} />
         <Route path="/payslips" element={<Payslips />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
