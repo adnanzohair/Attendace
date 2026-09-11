@@ -7,6 +7,7 @@ import { renderPayslipPdf } from "../services/payslipPdf.js";
 import { currentPayrollMonth, payrollPeriodForMonth } from "../services/payrollPeriod.js";
 import { AppError, asyncHandler } from "../utils/http.js";
 import { buildEmployeeAttendanceDays } from "../services/employeeAttendanceDays.js";
+import { payslipContentDisposition } from "../services/payslipDisposition.js";
 
 const r = Router();
 r.use(employeeAuth);
@@ -56,6 +57,11 @@ r.get("/payslips/:id", asyncHandler(async (req, res) => {
 }));
 r.get("/payslips/:id/download", asyncHandler(async (req, res) => {
   const payslip = await PublishedPayslip.findOne(employeePayslipFilter(req.employee._id, req.params.id)).lean(); if (!payslip) throw new AppError(404, "Payslip not found");
-  const pdf = await renderPayslipPdf(payslip.data); res.set({ "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="payslip_${payslip.periodStart}_${payslip.periodEnd}.pdf"` }).send(pdf);
+  const pdf = await renderPayslipPdf(payslip.data);
+  res.set({
+    "Content-Type": "application/pdf",
+    "Content-Disposition": payslipContentDisposition({ inline: req.query.inline === "1", startDate: payslip.periodStart, endDate: payslip.periodEnd }),
+    "Cache-Control": "private, no-store",
+  }).send(pdf);
 }));
 export default r;
