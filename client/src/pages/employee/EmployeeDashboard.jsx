@@ -20,8 +20,8 @@ export default function EmployeeDashboard() {
     ["Late days", summary.lateDays],
     ["Short hours", hours(summary.shortMinutes)],
     ["Overtime", hours(summary.overtimeMinutes)],
-    ["Sick leave remaining", summary.sickRemaining],
-    ["Casual leave remaining", summary.casualRemaining],
+    [`Sick leave remaining · ${summary.sickUsed} used / ${summary.sickGranted} granted`, summary.sickRemaining],
+    [`Casual leave remaining · ${summary.casualUsed} used / ${summary.casualGranted} granted`, summary.casualRemaining],
   ];
 
   return <>

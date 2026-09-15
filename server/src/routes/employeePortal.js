@@ -9,6 +9,7 @@ import { AppError, asyncHandler } from "../utils/http.js";
 import { buildEmployeeAttendanceDays } from "../services/employeeAttendanceDays.js";
 import { payslipContentDisposition } from "../services/payslipDisposition.js";
 import { leaveRequestOverlapFilter, validateLeaveRequest } from "../services/leaveRequestPolicy.js";
+import { employeeLeaveBalance } from "../services/employeeLeaveBalance.js";
 
 const r = Router();
 r.use(employeeAuth);
@@ -58,7 +59,8 @@ r.get("/dashboard", asyncHandler(async (req, res) => {
   const attendanceDays = buildEmployeeAttendanceDays({ startDate: period.startDate, endDate: period.endDate, records, holidays, joiningDate, asOfDate: dateKey(new Date()) });
   const sickUsed = yearlyRecords.filter((x) => x.leaveType === "sick" || has(x, "Sick Leave")).length;
   const casualUsed = yearlyRecords.filter((x) => x.leaveType === "casual" || has(x, "Casual Leave") || has(x, "Absent")).length;
-  res.json({ employee: safeEmployee(req.employee), period, latestPayslip, summary: { presentDays: attendanceDays.filter((x) => x.totalMinutes > 0).length, absentDays: attendanceDays.filter((x) => x.conditions.includes("Absent")).length, lateDays: attendanceDays.filter((x) => x.lateMinutes > 0).length, shortMinutes: minutes(attendanceDays, "shortMinutes"), overtimeMinutes: minutes(attendanceDays, "overtimeMinutes"), sickUsed, casualUsed, sickRemaining: Math.max(0, Number(req.employee.leavePolicy?.sickGranted || 0) - sickUsed), casualRemaining: Math.max(0, Number(req.employee.leavePolicy?.casualGranted || 0) - casualUsed) } });
+  const leaveBalance = employeeLeaveBalance({ sickGranted: req.employee.leavePolicy?.sickGranted, casualGranted: req.employee.leavePolicy?.casualGranted, sickUsed, casualUsed });
+  res.json({ employee: safeEmployee(req.employee), period, latestPayslip, summary: { presentDays: attendanceDays.filter((x) => x.totalMinutes > 0).length, absentDays: attendanceDays.filter((x) => x.conditions.includes("Absent")).length, lateDays: attendanceDays.filter((x) => x.lateMinutes > 0).length, shortMinutes: minutes(attendanceDays, "shortMinutes"), overtimeMinutes: minutes(attendanceDays, "overtimeMinutes"), ...leaveBalance } });
 }));
 r.get("/payslips", asyncHandler(async (req, res) => {
   const payslips = await PublishedPayslip.find(employeePayslipFilter(req.employee._id)).sort({ periodEnd: -1 }).select("periodStart periodEnd currency netSalary publishedAt delivery.status data.company data.employee").lean();

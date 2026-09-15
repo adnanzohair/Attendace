@@ -3,6 +3,7 @@ import { Eye, MailPlus, Pencil, Plus, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, messageOf } from "../services/api";
 import { Empty, Modal, StatusBadge } from "../components/ui";
+import { grantedLeaveValue } from "../utils/leaveBalancePresentation";
 
 const blank = {
   employeeId: "",
@@ -181,11 +182,11 @@ export default function Employees() {
                     </td>
                     <td>
                       {x.leaveUsage?.sickUsed || 0} used /{" "}
-                      {x.leavePolicy?.sickGranted || 6} granted
+                      {grantedLeaveValue(x.leavePolicy?.sickGranted)} granted
                     </td>
                     <td>
                       {x.leaveUsage?.casualUsed || 0} used /{" "}
-                      {x.leavePolicy?.casualGranted || 12} granted
+                      {grantedLeaveValue(x.leavePolicy?.casualGranted)} granted
                     </td>
                     <td>
                       <StatusBadge value={x.status} />
