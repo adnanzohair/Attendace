@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { Attendance, Holiday, PublishedPayslip } from "../models/index.js";
+import { Attendance, Holiday, LeaveRequest, PublishedPayslip } from "../models/index.js";
 import { employeeAuth } from "../middleware/employeeAuth.js";
 import { safeEmployee } from "../services/employeeSafeView.js";
 import { employeePayslipFilter } from "../services/payslipPublication.js";
@@ -8,6 +8,7 @@ import { currentPayrollMonth, payrollPeriodForMonth } from "../services/payrollP
 import { AppError, asyncHandler } from "../utils/http.js";
 import { buildEmployeeAttendanceDays } from "../services/employeeAttendanceDays.js";
 import { payslipContentDisposition } from "../services/payslipDisposition.js";
+import { leaveRequestOverlapFilter, validateLeaveRequest } from "../services/leaveRequestPolicy.js";
 
 const r = Router();
 r.use(employeeAuth);
@@ -23,6 +24,17 @@ function range(query) {
 }
 const minutes = (records, field) => records.reduce((sum, record) => sum + Number(record[field] || 0), 0);
 r.get("/profile", (req, res) => res.json({ employee: safeEmployee(req.employee) }));
+r.get("/leave-requests", asyncHandler(async (req, res) => {
+  const requests = await LeaveRequest.find({ employee: req.employee._id }).sort({ createdAt: -1 }).select("requestedType startDate endDate reason status approvedType adminNote reviewedAt createdAt").lean();
+  res.json({ data: requests });
+}));
+r.post("/leave-requests", asyncHandler(async (req, res) => {
+  const payload = validateLeaveRequest({ ...req.body, today: dateKey(new Date()) });
+  const overlap = await LeaveRequest.exists(leaveRequestOverlapFilter(req.employee._id, payload.startDate, payload.endDate));
+  if (overlap) throw new AppError(409, "This request overlaps an existing pending or approved leave request");
+  const request = await LeaveRequest.create({ ...payload, employee: req.employee._id, employeeId: req.employee.employeeId });
+  res.status(201).json({ message: "Leave request submitted for approval", request });
+}));
 r.get("/attendance", asyncHandler(async (req, res) => {
   const period = range(req.query);
   const [records, holidays] = await Promise.all([

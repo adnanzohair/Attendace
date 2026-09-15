@@ -74,6 +74,7 @@ export async function calculatePayslip(employeeId, query = {}) {
     const record = yearlyByDate.get(workDate);
     if (record?.leaveType === "sick" || record?.conditions?.includes("Sick Leave")) leaveEvents.push({ workDate, type: "sick" });
     else if (record?.leaveType === "casual" || record?.conditions?.includes("Casual Leave")) leaveEvents.push({ workDate, type: "casual" });
+    else if (record?.leaveType === "unpaid" || record?.conditions?.includes("Unpaid Leave")) leaveEvents.push({ workDate, type: "unpaid" });
     else if (record?.conditions?.includes("Absent") || (!record && workDate >= start)) leaveEvents.push({ workDate, type: "absent" });
   }
   const leaveSummary = calculateLeaveEntitlement({ sickGranted: employee.leavePolicy?.sickGranted, casualGranted: employee.leavePolicy?.casualGranted, periodStart: start, periodEnd: end, events: leaveEvents });

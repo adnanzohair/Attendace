@@ -10,8 +10,13 @@ export function calculateLeaveEntitlement({
     sick: { usedYtd: 0, usedInPeriod: 0, excessInPeriod: 0 },
     casual: { usedYtd: 0, usedInPeriod: 0, excessInPeriod: 0 },
   };
+  let explicitUnpaidDaysInPeriod = 0;
 
   for (const event of [...events].sort((a, b) => a.workDate.localeCompare(b.workDate))) {
+    if (event.type === "unpaid") {
+      if (event.workDate >= periodStart && event.workDate <= periodEnd) explicitUnpaidDaysInPeriod += 1;
+      continue;
+    }
     const type = event.type === "sick" ? "sick" : "casual";
     const summary = totals[type];
     summary.usedYtd += 1;
@@ -35,6 +40,7 @@ export function calculateLeaveEntitlement({
   }
   return {
     ...result,
-    unpaidDaysInPeriod: result.sick.excessInPeriod + result.casual.excessInPeriod,
+    explicitUnpaidDaysInPeriod,
+    unpaidDaysInPeriod: result.sick.excessInPeriod + result.casual.excessInPeriod + explicitUnpaidDaysInPeriod,
   };
 }

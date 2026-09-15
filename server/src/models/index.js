@@ -161,7 +161,8 @@ const attendanceSchema = new Schema(
     overtimeMinutes: { type: Number, default: 0 },
     conditions: [String],
     status: { type: String, default: "Present" },
-    leaveType: { type: String, enum: ["sick", "casual", null], default: null },
+    leaveType: { type: String, enum: ["sick", "casual", "unpaid", null], default: null },
+    leaveRequest: { type: Schema.Types.ObjectId, ref: "LeaveRequest", index: true },
     workflow: {
       type: String,
       enum: ["processed", "needs_review", "reviewed", "finalized"],
@@ -284,6 +285,24 @@ const publishedPayslipSchema = new Schema(
   }, { timestamps: true },
 );
 publishedPayslipSchema.index({ employee: 1, periodStart: 1, periodEnd: 1 }, { unique: true, partialFilterExpression: { status: "published" } });
+const leaveRequestSchema = new Schema(
+  {
+    employee: { type: Schema.Types.ObjectId, ref: "Employee", required: true, index: true },
+    employeeId: { type: String, required: true, index: true },
+    requestedType: { type: String, enum: ["sick", "casual", "other"], required: true },
+    startDate: { type: String, required: true, index: true },
+    endDate: { type: String, required: true, index: true },
+    reason: { type: String, required: true, maxlength: 1000, trim: true },
+    status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending", index: true },
+    approvedType: { type: String, enum: ["sick", "casual", "unpaid", null], default: null },
+    adminNote: { type: String, maxlength: 1000, trim: true },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    reviewedAt: Date,
+    attendanceIds: [{ type: Schema.Types.ObjectId, ref: "Attendance" }],
+  },
+  { timestamps: true },
+);
+leaveRequestSchema.index({ employee: 1, status: 1, startDate: 1, endDate: 1 });
 export const User = model("User", userSchema);
 export const Shift = model("Shift", shiftSchema);
 export const Employee = model("Employee", employeeSchema);
@@ -303,3 +322,4 @@ export const Settings = model("Settings", settingsSchema);
 export const Holiday = model("Holiday", holidaySchema);
 export const PayslipEmailLog = model("PayslipEmailLog", payslipEmailLogSchema);
 export const PublishedPayslip = model("PublishedPayslip", publishedPayslipSchema);
+export const LeaveRequest = model("LeaveRequest", leaveRequestSchema);

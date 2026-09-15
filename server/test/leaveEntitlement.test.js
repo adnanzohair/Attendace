@@ -27,6 +27,29 @@ test("absence consumes casual leave and only excess days in the payslip period a
   assert.deepEqual(result, {
     sick: { granted: 1, usedYtd: 2, usedInPeriod: 0, remaining: 0, excessYtd: 1, excessInPeriod: 0 },
     casual: { granted: 2, usedYtd: 4, usedInPeriod: 3, remaining: 0, excessYtd: 2, excessInPeriod: 2 },
+    explicitUnpaidDaysInPeriod: 0,
     unpaidDaysInPeriod: 2,
   });
+});
+
+test("available sick and casual leave stay paid while explicit unpaid leave is deducted", async () => {
+  const { calculateLeaveEntitlement } = await import("../src/services/leaveEntitlement.js");
+  const result = calculateLeaveEntitlement({
+    sickGranted: 2,
+    casualGranted: 2,
+    periodStart: "2026-09-01",
+    periodEnd: "2026-09-30",
+    events: [
+      { workDate: "2026-09-03", type: "sick" },
+      { workDate: "2026-09-04", type: "casual" },
+      { workDate: "2026-09-07", type: "unpaid" },
+    ],
+  });
+
+  assert.equal(result.sick.remaining, 1);
+  assert.equal(result.casual.remaining, 1);
+  assert.equal(result.sick.excessInPeriod, 0);
+  assert.equal(result.casual.excessInPeriod, 0);
+  assert.equal(result.explicitUnpaidDaysInPeriod, 1);
+  assert.equal(result.unpaidDaysInPeriod, 1);
 });

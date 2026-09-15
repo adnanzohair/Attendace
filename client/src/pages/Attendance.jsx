@@ -154,6 +154,8 @@ export default function Attendance() {
               "Leave",
               "Sick Leave",
               "Casual Leave",
+              "Approved Leave",
+              "Unpaid Leave",
               "Late",
               "Short Hours",
               "Overtime",

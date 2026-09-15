@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { CalendarPlus } from "lucide-react";
 import { api, messageOf } from "../../services/api";
 import { hours, Spinner } from "../../components/ui";
 
@@ -24,7 +25,7 @@ export default function EmployeeDashboard() {
   ];
 
   return <>
-    <div className="mb-4"><h2 className="page-title">{data.period.label}</h2><p className="muted">{data.period.startDate} to {data.period.endDate}</p></div>
+    <div className="mb-4 flex flex-wrap items-end justify-between gap-3"><div><h2 className="page-title">{data.period.label}</h2><p className="muted">{data.period.startDate} to {data.period.endDate}</p></div><Link className="btn-primary" to="/employee/leave"><CalendarPlus size={17}/>Request leave</Link></div>
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{cards.map(([label, value]) => <div className="card p-5" key={label}><div className="text-2xl font-bold text-brand-700">{value}</div><div className="mt-1 text-sm text-slate-500">{label}</div></div>)}</div>
     <section className="card mt-5 p-5">
       <h3 className="text-lg font-bold">Latest published payslip</h3>

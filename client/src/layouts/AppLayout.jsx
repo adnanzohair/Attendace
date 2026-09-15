@@ -12,6 +12,7 @@ import {
   LogOut,
   CalendarHeart,
   ShieldCheck,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 const links = [
@@ -23,6 +24,7 @@ const links = [
   ["/attendance/exceptions", "Exceptions", TriangleAlert],
   ["/attendance/monthly", "Monthly Report", CalendarDays],
   ["/holidays", "Holidays", CalendarHeart],
+  ["/leave-requests", "Leave Requests", ClipboardCheck],
   ["/payroll", "Payroll", Banknote],
   ["/payslips", "Payslips", ReceiptText],
   ["/settings", "Settings", Settings],

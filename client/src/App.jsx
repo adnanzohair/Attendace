@@ -26,6 +26,8 @@ import MyPayslips from "./pages/employee/MyPayslips";
 import MyProfile from "./pages/employee/MyProfile";
 import AdminActivate from "./pages/AdminActivate";
 import AdminUsers from "./pages/AdminUsers";
+import MyLeave from "./pages/employee/MyLeave";
+import LeaveRequests from "./pages/LeaveRequests";
 function Protected() {
   const { user, loading } = useAuth();
   if (loading)
@@ -58,6 +60,7 @@ export default function App() {
         <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
         <Route path="/employee/attendance" element={<MyAttendance />} />
         <Route path="/employee/payslips" element={<MyPayslips />} />
+        <Route path="/employee/leave" element={<MyLeave />} />
         <Route path="/employee/profile" element={<MyProfile />} />
       </Route>
       <Route element={<Protected />}>
@@ -71,6 +74,7 @@ export default function App() {
         <Route path="/attendance/monthly" element={<Monthly />} />
         <Route path="/attendance/:id" element={<AttendanceDetail />} />
         <Route path="/holidays" element={<Holidays />} />
+        <Route path="/leave-requests" element={<LeaveRequests />} />
         <Route path="/payroll" element={<Payroll />} />
         <Route path="/payslips" element={<Payslips />} />
         <Route path="/settings" element={<Settings />} />
