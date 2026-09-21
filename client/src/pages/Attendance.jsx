@@ -324,7 +324,7 @@ export default function Attendance() {
               </div>
             )}
             <label className="mt-4 block">
-              <span className="label">Reason (required)</span>
+              <span className="label">Reason ({isLeave ? "required" : "optional"})</span>
               <textarea
                 className="field"
                 value={manual.reason}
@@ -334,9 +334,9 @@ export default function Attendance() {
                 placeholder={
                   isLeave
                     ? "Leave approval or reason"
-                    : "Why is this time being changed?"
+                    : "Optional note about this correction"
                 }
-                required
+                required={isLeave}
               />
             </label>
             {manual.finalized && (
