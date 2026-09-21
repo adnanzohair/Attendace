@@ -5,6 +5,7 @@ import {
   localDateTime,
   workDateForPunch,
 } from "../src/services/attendanceProcessor.js";
+import { zonedDateParts } from "../src/services/companyDateTime.js";
 const employee = { _id: "employee", employeeId: "1001" };
 const shift = {
   _id: "shift",
@@ -24,8 +25,8 @@ const calc = (punches, s = shift, date = "2026-09-03") =>
   calculateAttendance({ employee, shift: s, workDate: date, punches });
 test("pairs standard shift", () => {
   const r = calc([p("2026-09-03", "2:35 PM"), p("2026-09-03", "11:02 PM")]);
-  assert.equal(r.actualClockIn.getHours(), 14);
-  assert.equal(r.actualClockOut.getMinutes(), 2);
+  assert.deepEqual(zonedDateParts(r.actualClockIn), { date: "2026-09-03", hours: 14, minutes: 35 });
+  assert.deepEqual(zonedDateParts(r.actualClockOut), { date: "2026-09-03", hours: 23, minutes: 2 });
 });
 test("uses earliest and latest from multiple scans", () => {
   const r = calc(
