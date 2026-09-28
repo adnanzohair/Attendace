@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Pencil, Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Pencil, Plus, SlidersHorizontal, List } from "lucide-react";
 import { api, messageOf } from "../services/api";
 import { Empty, fmtTime, hours, Modal, PageHeader, StatusBadge } from "../components/ui";
 
@@ -40,12 +40,14 @@ export default function Attendance() {
     [startDate, setStart] = useState(initial[0]),
     [endDate, setEnd] = useState(initial[1]),
     [status, setStatus] = useState(""),
+    [viewMode, setViewMode] = useState("timeline"),
     [data, setData] = useState([]),
     [employees, setEmployees] = useState([]),
     [manual, setManual] = useState(null),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [saving, setSaving] = useState(false);
+
   const load = () =>
     api
       .get("/attendance", {
@@ -53,14 +55,17 @@ export default function Attendance() {
       })
       .then((response) => setData(response.data.data))
       .catch((e) => setError(messageOf(e)));
+
   useEffect(() => {
     load();
   }, [startDate, endDate, status]);
+
   useEffect(() => {
     api
       .get("/employees", { params: { status: "active", limit: 500 } })
       .then((response) => setEmployees(response.data.data));
   }, []);
+
   async function saveManual(event) {
     event.preventDefault();
     setSaving(true);
@@ -78,6 +83,7 @@ export default function Attendance() {
       setSaving(false);
     }
   }
+
   function editRow(record) {
     setError("");
     setManual({
@@ -93,6 +99,7 @@ export default function Attendance() {
       finalized: record.workflow === "finalized",
     });
   }
+
   const isLeave = manual?.attendanceType && manual.attendanceType !== "present";
 
   return (
@@ -130,112 +137,242 @@ export default function Attendance() {
       )}
 
       <div className="card overflow-hidden">
-        <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 p-4">
-          <label>
-            <span className="label">Start date</span>
-            <input
-              className="field"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStart(e.target.value)}
-            />
-          </label>
-          <label>
-            <span className="label">End date</span>
-            <input
-              className="field"
-              type="date"
-              value={endDate}
-              min={startDate}
-              onChange={(e) => setEnd(e.target.value)}
-            />
-          </label>
-          <label>
-            <span className="label">Status</span>
-            <select
-              className="field w-auto"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="">All statuses</option>
-              {[
-                "Present",
-                "Leave",
-                "Sick Leave",
-                "Casual Leave",
-                "Approved Leave",
-                "Unpaid Leave",
-                "Late",
-                "Short Hours",
-                "Overtime",
-                "Absent",
-                "Missing Clock-In",
-                "Missing Clock-Out",
-                "Attendance Error",
-              ].map((x) => (
-                <option key={x}>{x}</option>
-              ))}
-            </select>
-          </label>
-          <span className="ml-auto pb-2 text-xs font-medium text-slate-400">
-            {data.length} records
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <label>
+              <span className="label">Start date</span>
+              <input
+                className="field"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStart(e.target.value)}
+              />
+            </label>
+            <label>
+              <span className="label">End date</span>
+              <input
+                className="field"
+                type="date"
+                value={endDate}
+                min={startDate}
+                onChange={(e) => setEnd(e.target.value)}
+              />
+            </label>
+            <label>
+              <span className="label">Status</span>
+              <select
+                className="field w-auto"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="">All statuses</option>
+                {[
+                  "Present",
+                  "Leave",
+                  "Sick Leave",
+                  "Casual Leave",
+                  "Approved Leave",
+                  "Unpaid Leave",
+                  "Late",
+                  "Short Hours",
+                  "Overtime",
+                  "Absent",
+                  "Missing Clock-In",
+                  "Missing Clock-Out",
+                  "Attendance Error",
+                ].map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center rounded-lg border border-slate-200 bg-white p-1 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("timeline")}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                  viewMode === "timeline"
+                    ? "bg-blue-50 text-[#0091ff]"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <SlidersHorizontal size={14} />
+                <span>Timeline</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                  viewMode === "table"
+                    ? "bg-blue-50 text-[#0091ff]"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <List size={14} />
+                <span>Table</span>
+              </button>
+            </div>
+            <span className="text-xs font-medium text-slate-400">
+              {data.length} records
+            </span>
+          </div>
         </div>
 
         {data.length ? (
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Employee</th>
-                  <th>ID</th>
-                  <th>Clock In</th>
-                  <th>Clock Out</th>
-                  <th>Worked</th>
-                  <th>Late</th>
-                  <th>Short</th>
-                  <th>Conditions</th>
-                  <th className="text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((x) => (
-                  <tr key={x._id}>
-                    <td>
-                      <Link className="link" to={`/attendance/${x._id}`}>
-                        {x.workDate}
-                      </Link>
-                    </td>
-                    <td className="cell-strong">{x.employee?.name}</td>
-                    <td className="font-mono text-xs text-slate-500">{x.employeeId}</td>
-                    <td>{fmtTime(x.actualClockIn)}</td>
-                    <td>{fmtTime(x.actualClockOut)}</td>
-                    <td className="font-medium text-ink">{hours(x.actualMinutes)}</td>
-                    <td>
-                      <Minutes value={x.lateMinutes} />
-                    </td>
-                    <td>
-                      <Minutes value={x.shortMinutes} tone="text-orange-700" />
-                    </td>
-                    <td>
-                      <StatusBadge value={x.conditions} />
-                    </td>
-                    <td className="text-right">
+          viewMode === "timeline" ? (
+            <div className="divide-y divide-slate-100 p-4">
+              {data.map((x) => {
+                const parts = (x.workDate || "").split("-");
+                const dayNum = parts.length === 3 ? parts[2] : x.workDate;
+                const d = parts.length === 3 ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])) : null;
+                const dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+                const dayName = d ? dayNames[d.getDay()] : "---";
+
+                const isAbsent = x.conditions?.includes("Absent") || x.status === "Absent";
+                const isLeave = x.conditions?.some(c => c.includes("Leave")) || x.leaveType;
+                const isPresent = (x.actualMinutes > 0 || x.actualClockIn) && !isAbsent;
+
+                let lineColor = "bg-emerald-500";
+                let dotColor = "bg-emerald-500";
+                let badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                let badgeText = "Office-in";
+
+                if (isAbsent) {
+                  lineColor = "bg-rose-400";
+                  dotColor = "bg-rose-500";
+                  badgeStyle = "bg-rose-50 text-rose-700 border-rose-200";
+                  badgeText = "Absent";
+                } else if (isLeave) {
+                  lineColor = "bg-indigo-400";
+                  dotColor = "bg-indigo-500";
+                  badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200";
+                  badgeText = x.leaveType ? `${x.leaveType} leave` : "Leave";
+                } else if (x.conditions?.includes("Remote")) {
+                  lineColor = "bg-cyan-500";
+                  dotColor = "bg-cyan-500";
+                  badgeStyle = "bg-cyan-50 text-cyan-700 border-cyan-200";
+                  badgeText = "Remote-in";
+                } else {
+                  badgeText = x.conditions?.[0] || "Office-in";
+                }
+
+                return (
+                  <div
+                    key={x._id}
+                    className="flex flex-col gap-3 rounded-xl py-3.5 px-3 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:gap-4"
+                  >
+                    {/* Date & Employee info */}
+                    <div className="flex w-44 shrink-0 items-center gap-3">
+                      <div className="flex w-12 flex-col leading-tight">
+                        <span className="text-sm font-bold text-slate-800">{dayNum}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">{dayName}</span>
+                      </div>
+                      <div className="min-w-0 flex-1 leading-tight">
+                        <Link to={`/attendance/${x._id}`} className="block truncate font-semibold text-xs text-slate-800 hover:text-[#0091ff]">
+                          {x.employee?.name}
+                        </Link>
+                        <span className="text-[10px] font-mono text-slate-400">{x.employeeId}</span>
+                      </div>
+                    </div>
+
+                    {/* Clock In */}
+                    <div className="w-20 shrink-0 text-xs font-bold text-slate-700 text-left">
+                      {fmtTime(x.actualClockIn) || "00:00"}
+                    </div>
+
+                    {/* Timeline Line with Badge */}
+                    <div className="relative flex flex-1 items-center px-2">
+                      <span className={`h-2.5 w-2.5 rounded-full ${dotColor} shrink-0 ring-2 ring-white shadow-xs`} />
+                      <span className={`h-[2px] flex-1 ${lineColor}`} />
+                      <span className={`mx-2 inline-flex items-center justify-center rounded-md border px-2.5 py-0.5 text-xs font-medium shadow-2xs whitespace-nowrap ${badgeStyle}`}>
+                        {badgeText}
+                      </span>
+                      <span className={`h-[2px] flex-1 ${lineColor}`} />
+                      <span className={`h-2.5 w-2.5 rounded-full ${dotColor} shrink-0 ring-2 ring-white shadow-xs`} />
+                    </div>
+
+                    {/* Clock Out */}
+                    <div className="w-20 shrink-0 text-xs font-bold text-slate-700 text-right">
+                      {fmtTime(x.actualClockOut) || "00:00"}
+                    </div>
+
+                    {/* Worked Hours */}
+                    <div className="flex w-24 shrink-0 flex-col items-end leading-tight text-right">
+                      <span className="text-xs font-bold text-slate-800">{hours(x.actualMinutes)}</span>
+                      <span className="text-[10px] text-slate-400">Hrs Worked</span>
+                    </div>
+
+                    {/* Action */}
+                    <div className="w-16 shrink-0 text-right">
                       <button
                         type="button"
                         className="btn-secondary btn-sm"
                         onClick={() => editRow(x)}
                       >
-                        <Pencil size={14} />
-                        Edit
+                        <Pencil size={13} />
                       </button>
-                    </td>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>ID</th>
+                    <th>Clock In</th>
+                    <th>Clock Out</th>
+                    <th>Worked</th>
+                    <th>Late</th>
+                    <th>Short</th>
+                    <th>Conditions</th>
+                    <th className="text-right">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {data.map((x) => (
+                    <tr key={x._id}>
+                      <td>
+                        <Link className="link" to={`/attendance/${x._id}`}>
+                          {x.workDate}
+                        </Link>
+                      </td>
+                      <td className="cell-strong">{x.employee?.name}</td>
+                      <td className="font-mono text-xs text-slate-500">{x.employeeId}</td>
+                      <td>{fmtTime(x.actualClockIn)}</td>
+                      <td>{fmtTime(x.actualClockOut)}</td>
+                      <td className="font-medium text-ink">{hours(x.actualMinutes)}</td>
+                      <td>
+                        <Minutes value={x.lateMinutes} />
+                      </td>
+                      <td>
+                        <Minutes value={x.shortMinutes} tone="text-orange-700" />
+                      </td>
+                      <td>
+                        <StatusBadge value={x.conditions} />
+                      </td>
+                      <td className="text-right">
+                        <button
+                          type="button"
+                          className="btn-secondary btn-sm"
+                          onClick={() => editRow(x)}
+                        >
+                          <Pencil size={14} />
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         ) : (
           <Empty text="No attendance records in this range." />
         )}
