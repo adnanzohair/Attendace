@@ -167,10 +167,7 @@ export default function AuthShell({
         {/* Footer */}
         <div className="relative flex items-center justify-between text-xs text-slate-400/80">
           <div>© {new Date().getFullYear()} Tekglide Inc. · All rights reserved</div>
-          <div className="inline-flex items-center gap-1.5 text-slate-400">
-            <ShieldCheck size={14} className="text-[#f26322]" />
-            <span>256-bit Secure Connection</span>
-          </div>
+         
         </div>
       </div>
 
