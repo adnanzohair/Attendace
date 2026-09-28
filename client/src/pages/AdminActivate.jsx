@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import AppFooter from "../components/AppFooter";
+import { AlertCircle } from "lucide-react";
+import AuthShell from "../components/AuthShell";
 import { api, messageOf } from "../services/api";
 
 export default function AdminActivate() {
@@ -12,7 +13,8 @@ export default function AdminActivate() {
   const [busy, setBusy] = useState(false);
 
   async function submit(event) {
-    event.preventDefault(); setError("");
+    event.preventDefault();
+    setError("");
     if (password !== confirmPassword) return setError("Passwords do not match");
     setBusy(true);
     try {
@@ -25,5 +27,63 @@ export default function AdminActivate() {
     }
   }
 
-  return <div className="flex min-h-screen flex-col bg-ink"><div className="grid flex-1 place-items-center p-4"><form className="card w-full max-w-md p-8" onSubmit={submit}><h1 className="text-2xl font-bold">Activate administrator account</h1><p className="muted mb-6 mt-2">Create a private password with at least 10 characters.</p>{error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-red-700">{error}</div>}<label><span className="label">Password</span><input className="field mb-4" type="password" minLength="10" value={password} onChange={(event) => setPassword(event.target.value)} required/></label><label><span className="label">Confirm password</span><input className="field mb-4" type="password" minLength="10" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required/></label><button className="btn-primary w-full" disabled={busy}>{busy ? "Activating…" : "Create password"}</button><Link className="mt-4 block text-center text-sm text-brand-700" to="/login">Back to login</Link></form></div><AppFooter dark/></div>;
+  return (
+    <AuthShell
+      eyebrow="Administrator invitation"
+      title="Activate your account"
+      subtitle="Create a private password with at least 10 characters."
+    >
+      <form className="space-y-5" onSubmit={submit}>
+        {error && (
+          <div className="alert-error">
+            <AlertCircle size={17} className="mt-px shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div>
+          <label className="label" htmlFor="new-password">
+            Password
+          </label>
+          <input
+            id="new-password"
+            className="field"
+            type="password"
+            minLength="10"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="label" htmlFor="confirm-password">
+            Confirm password
+          </label>
+          <input
+            id="confirm-password"
+            className="field"
+            type="password"
+            minLength="10"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+          />
+          <p className="hint">Minimum 10 characters. Never share this password.</p>
+        </div>
+
+        <button className="btn-primary w-full py-2.5" disabled={busy}>
+          {busy ? "Activating…" : "Create password"}
+        </button>
+      </form>
+
+      <div className="mt-8 border-t border-slate-200 pt-5 text-center">
+        <Link className="link text-sm" to="/login">
+          Back to login
+        </Link>
+      </div>
+    </AuthShell>
+  );
 }

@@ -1,1 +1,1 @@
-export const FOOTER_COPY = "Attendly — Thoughtfully designed and engineered by Adnan";
+export const FOOTER_COPY = "Tekglide Workforce — Thoughtfully engineered for Tekglide employees";

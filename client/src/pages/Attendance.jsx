@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Pencil, Plus } from "lucide-react";
 import { api, messageOf } from "../services/api";
-import { Empty, fmtTime, hours, Modal, StatusBadge } from "../components/ui";
+import { Empty, fmtTime, hours, Modal, PageHeader, StatusBadge } from "../components/ui";
 
 function defaults() {
   const now = new Date(),
@@ -30,6 +30,11 @@ function inputDate(value) {
   date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
   return date.toISOString().slice(0, 16);
 }
+
+/** Minutes rendered dimmed when zero, so problem columns stand out. */
+const Minutes = ({ value, tone = "text-amber-700" }) =>
+  value ? <span className={`font-medium ${tone}`}>{hours(value)}</span> : <span className="text-slate-300">—</span>;
+
 export default function Attendance() {
   const initial = defaults(),
     [startDate, setStart] = useState(initial[0]),
@@ -89,15 +94,13 @@ export default function Attendance() {
     });
   }
   const isLeave = manual?.attendanceType && manual.attendanceType !== "present";
+
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="page-title">Attendance</h1>
-          <p className="muted mt-1">
-            Use Edit on any row to correct time or assign leave.
-          </p>
-        </div>
+      <PageHeader
+        title="Attendance"
+        subtitle="Use Edit on any row to correct time or assign leave."
+      >
         <button
           className="btn-primary"
           onClick={() => {
@@ -108,22 +111,26 @@ export default function Attendance() {
             });
           }}
         >
-          <Plus size={18} />
+          <Plus size={17} />
           Add attendance / leave
         </button>
-      </div>
+      </PageHeader>
+
       {notice && (
-        <div className="mb-4 rounded-lg bg-green-50 p-3 text-green-700">
-          {notice}
+        <div className="alert-success mb-4">
+          <CheckCircle2 size={17} className="mt-px shrink-0" />
+          <span>{notice}</span>
         </div>
       )}
       {!manual && error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-3 text-red-700">
-          {error}
+        <div className="alert-error mb-4">
+          <AlertCircle size={17} className="mt-px shrink-0" />
+          <span>{error}</span>
         </div>
       )}
-      <div className="card">
-        <div className="flex flex-wrap items-end gap-3 border-b p-4">
+
+      <div className="card overflow-hidden">
+        <div className="flex flex-wrap items-end gap-3 border-b border-slate-200 p-4">
           <label>
             <span className="label">Start date</span>
             <input
@@ -143,31 +150,38 @@ export default function Attendance() {
               onChange={(e) => setEnd(e.target.value)}
             />
           </label>
-          <select
-            className="field w-auto"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="">All statuses</option>
-            {[
-              "Present",
-              "Leave",
-              "Sick Leave",
-              "Casual Leave",
-              "Approved Leave",
-              "Unpaid Leave",
-              "Late",
-              "Short Hours",
-              "Overtime",
-              "Absent",
-              "Missing Clock-In",
-              "Missing Clock-Out",
-              "Attendance Error",
-            ].map((x) => (
-              <option key={x}>{x}</option>
-            ))}
-          </select>
+          <label>
+            <span className="label">Status</span>
+            <select
+              className="field w-auto"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="">All statuses</option>
+              {[
+                "Present",
+                "Leave",
+                "Sick Leave",
+                "Casual Leave",
+                "Approved Leave",
+                "Unpaid Leave",
+                "Late",
+                "Short Hours",
+                "Overtime",
+                "Absent",
+                "Missing Clock-In",
+                "Missing Clock-Out",
+                "Attendance Error",
+              ].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </label>
+          <span className="ml-auto pb-2 text-xs font-medium text-slate-400">
+            {data.length} records
+          </span>
         </div>
+
         {data.length ? (
           <div className="table-wrap">
             <table className="table">
@@ -182,37 +196,38 @@ export default function Attendance() {
                   <th>Late</th>
                   <th>Short</th>
                   <th>Conditions</th>
-                  <th>Action</th>
+                  <th className="text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((x) => (
                   <tr key={x._id}>
                     <td>
-                      <Link
-                        className="text-brand-600"
-                        to={`/attendance/${x._id}`}
-                      >
+                      <Link className="link" to={`/attendance/${x._id}`}>
                         {x.workDate}
                       </Link>
                     </td>
-                    <td>{x.employee?.name}</td>
-                    <td>{x.employeeId}</td>
+                    <td className="cell-strong">{x.employee?.name}</td>
+                    <td className="font-mono text-xs text-slate-500">{x.employeeId}</td>
                     <td>{fmtTime(x.actualClockIn)}</td>
                     <td>{fmtTime(x.actualClockOut)}</td>
-                    <td>{hours(x.actualMinutes)}</td>
-                    <td>{hours(x.lateMinutes)}</td>
-                    <td>{hours(x.shortMinutes)}</td>
+                    <td className="font-medium text-ink">{hours(x.actualMinutes)}</td>
+                    <td>
+                      <Minutes value={x.lateMinutes} />
+                    </td>
+                    <td>
+                      <Minutes value={x.shortMinutes} tone="text-orange-700" />
+                    </td>
                     <td>
                       <StatusBadge value={x.conditions} />
                     </td>
-                    <td>
+                    <td className="text-right">
                       <button
                         type="button"
-                        className="btn-secondary px-3 py-1.5"
+                        className="btn-secondary btn-sm"
                         onClick={() => editRow(x)}
                       >
-                        <Pencil size={15} />
+                        <Pencil size={14} />
                         Edit
                       </button>
                     </td>
@@ -222,9 +237,10 @@ export default function Attendance() {
             </table>
           </div>
         ) : (
-          <Empty />
+          <Empty text="No attendance records in this range." />
         )}
       </div>
+
       {manual && (
         <Modal
           title={manual._id ? "Edit attendance" : "Add attendance or leave"}
@@ -232,19 +248,20 @@ export default function Attendance() {
         >
           <form onSubmit={saveManual}>
             {error && (
-              <div className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                {error}
+              <div className="alert-error mb-4">
+                <AlertCircle size={17} className="mt-px shrink-0" />
+                <span>{error}</span>
               </div>
             )}
             {manual._id ? (
-              <div className="grid gap-3 rounded-lg bg-slate-50 p-3 sm:grid-cols-2">
+              <div className="panel grid gap-4 sm:grid-cols-2">
                 <div>
-                  <span className="text-xs text-slate-500">Employee</span>
-                  <div className="font-semibold">{manual.employeeName}</div>
+                  <div className="eyebrow">Employee</div>
+                  <div className="mt-0.5 font-semibold text-ink">{manual.employeeName}</div>
                 </div>
                 <div>
-                  <span className="text-xs text-slate-500">Date</span>
-                  <div className="font-semibold">{manual.workDate}</div>
+                  <div className="eyebrow">Date</div>
+                  <div className="mt-0.5 font-semibold text-ink">{manual.workDate}</div>
                 </div>
               </div>
             ) : (
@@ -294,7 +311,6 @@ export default function Attendance() {
                 <option value="sick">Sick Leave</option>
                 <option value="casual">Casual Leave</option>
                 <option value="work-from-home">Work From Home</option>
-
               </select>
             </label>
             {!isLeave && (
@@ -327,6 +343,7 @@ export default function Attendance() {
               <span className="label">Reason ({isLeave ? "required" : "optional"})</span>
               <textarea
                 className="field"
+                rows="3"
                 value={manual.reason}
                 onChange={(e) =>
                   setManual({ ...manual, reason: e.target.value })
@@ -340,18 +357,21 @@ export default function Attendance() {
               />
             </label>
             {manual.finalized && (
-              <label className="mt-4 flex gap-2 text-sm">
+              <label className="mt-4 flex cursor-pointer items-center gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
                 <input
                   type="checkbox"
+                  className="checkbox"
                   checked={manual.reopen}
                   onChange={(e) =>
                     setManual({ ...manual, reopen: e.target.checked })
                   }
                 />
-                Explicitly reopen finalized record
+                <span className="text-sm font-medium text-amber-800">
+                  Explicitly reopen finalized record
+                </span>
               </label>
             )}
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="mt-6 flex justify-end gap-2 border-t border-slate-200 pt-4">
               <button
                 type="button"
                 className="btn-secondary"

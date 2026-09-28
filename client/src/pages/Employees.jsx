@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Eye, MailPlus, Pencil, Plus, Search } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, MailPlus, Pencil, Plus, Search } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, messageOf } from "../services/api";
-import { Empty, Modal, StatusBadge } from "../components/ui";
+import { Empty, Modal, PageHeader, StatusBadge } from "../components/ui";
 import { grantedLeaveValue } from "../utils/leaveBalancePresentation";
 
 const blank = {
@@ -45,6 +45,19 @@ const formEmployee = (employee) => ({
   payrollSettings: { ...blank.payrollSettings, ...employee.payrollSettings },
   leavePolicy: { ...blank.leavePolicy, ...employee.leavePolicy },
 });
+
+const initials = (name = "") =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "—";
+
+const SectionTitle = ({ children }) => (
+  <div className="eyebrow border-b border-slate-200 pb-2 sm:col-span-2">{children}</div>
+);
 
 export default function Employees() {
   const [data, setData] = useState([]),
@@ -103,13 +116,10 @@ export default function Employees() {
 
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="page-title">Employees</h1>
-          <p className="muted mt-1">
-            Manage employee details, salary and active status.
-          </p>
-        </div>
+      <PageHeader
+        title="Employees"
+        subtitle="Manage employee details, salary and active status."
+      >
         <button
           className="btn-primary"
           onClick={() => {
@@ -117,42 +127,50 @@ export default function Employees() {
             setEdit(structuredClone(blank));
           }}
         >
-          <Plus size={18} />
+          <Plus size={17} />
           Add employee
         </button>
-      </div>
+      </PageHeader>
+
       {notice && (
-        <div className="mb-4 rounded-lg bg-green-50 p-3 text-green-700">
-          {notice}
+        <div className="alert-success mb-4">
+          <CheckCircle2 size={17} className="mt-px shrink-0" />
+          <span>{notice}</span>
         </div>
       )}
       {!edit && error && (
-        <div className="mb-4 rounded-lg bg-red-50 p-3 text-red-700">
-          {error}
+        <div className="alert-error mb-4">
+          <AlertCircle size={17} className="mt-px shrink-0" />
+          <span>{error}</span>
         </div>
       )}
-      <div className="card">
+
+      <div className="card overflow-hidden">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             load();
           }}
-          className="flex gap-2 border-b p-4"
+          className="flex flex-wrap items-center gap-2.5 border-b border-slate-200 p-4"
         >
-          <div className="relative max-w-md flex-1">
+          <div className="relative min-w-[16rem] max-w-md flex-1">
             <Search
-              className="absolute left-3 top-2.5 text-slate-400"
-              size={18}
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              size={17}
             />
             <input
-              className="field pl-10"
+              className="field pl-9"
               placeholder="Search name, ID, department…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <button className="btn-secondary">Search</button>
+          <span className="ml-auto hidden text-xs font-medium text-slate-400 sm:block">
+            {data.length} employees
+          </span>
         </form>
+
         {data.length ? (
           <div className="table-wrap">
             <table className="table">
@@ -162,56 +180,76 @@ export default function Employees() {
                   <th>Enroll ID</th>
                   <th>Department</th>
                   <th>Designation</th>
-                  <th>Monthly salary</th>
+                  <th className="text-right">Monthly salary</th>
                   <th>Sick leave</th>
                   <th>Casual leave</th>
                   <th>Status</th>
-                  <th></th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((x) => (
                   <tr key={x._id}>
-                    <td className="font-semibold">{x.name}</td>
-                    <td>{x.employeeId}</td>
+                    <td>
+                      <div className="flex items-center gap-2.5">
+                        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-2xs font-bold text-slate-500">
+                          {initials(x.name)}
+                        </div>
+                        <div className="min-w-0 leading-tight">
+                          <div className="truncate font-medium text-ink">{x.name}</div>
+                          {x.email && (
+                            <div className="truncate text-xs text-slate-400">{x.email}</div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="font-mono text-xs text-slate-500">{x.employeeId}</td>
                     <td>{x.department || "—"}</td>
                     <td>{x.designation || "—"}</td>
-                    <td>
-                      {x.salaryCurrency || "PKR"}{" "}
-                      {Number(x.monthlySalary || 0).toLocaleString()}
+                    <td className="text-right">
+                      <span className="text-xs text-slate-400">{x.salaryCurrency || "PKR"}</span>{" "}
+                      <span className="font-medium text-ink">
+                        {Number(x.monthlySalary || 0).toLocaleString()}
+                      </span>
                     </td>
-                    <td>
-                      {x.leaveUsage?.sickUsed || 0} used /{" "}
-                      {grantedLeaveValue(x.leavePolicy?.sickGranted)} granted
+                    <td className="text-xs">
+                      <span className="font-medium text-ink">{x.leaveUsage?.sickUsed || 0}</span>
+                      <span className="text-slate-400">
+                        {" "}
+                        / {grantedLeaveValue(x.leavePolicy?.sickGranted)}
+                      </span>
                     </td>
-                    <td>
-                      {x.leaveUsage?.casualUsed || 0} used /{" "}
-                      {grantedLeaveValue(x.leavePolicy?.casualGranted)} granted
+                    <td className="text-xs">
+                      <span className="font-medium text-ink">{x.leaveUsage?.casualUsed || 0}</span>
+                      <span className="text-slate-400">
+                        {" "}
+                        / {grantedLeaveValue(x.leavePolicy?.casualGranted)}
+                      </span>
                     </td>
                     <td>
                       <StatusBadge value={x.status} />
                     </td>
                     <td>
-                      <div className="flex gap-2">
+                      <div className="flex justify-end gap-1">
                         <Link
                           aria-label={`View ${x.name}`}
                           title="View employee"
-                          className="p-1 text-slate-500"
+                          className="btn-icon"
                           to={`/employees/${x._id}`}
                         >
-                          <Eye size={17} />
+                          <Eye size={16} />
                         </Link>
                         <button
                           aria-label={`Edit ${x.name}`}
                           title="Edit employee"
                           type="button"
-                          className="p-1 text-slate-500"
+                          className="btn-icon"
                           onClick={() => {
                             setError("");
                             setEdit(formEmployee(x));
                           }}
                         >
-                          <Pencil size={17} />
+                          <Pencil size={16} />
                         </button>
                         <button
                           aria-label={`Invite ${x.name} to employee portal`}
@@ -222,10 +260,10 @@ export default function Employees() {
                           }
                           type="button"
                           disabled={saving || x.status !== "active" || !x.email}
-                          className="p-1 text-brand-700 disabled:cursor-not-allowed disabled:text-slate-300"
+                          className="btn-icon hover:bg-brand-50 hover:text-brand-700"
                           onClick={() => invite(x)}
                         >
-                          <MailPlus size={17} />
+                          <MailPlus size={16} />
                         </button>
                       </div>
                     </td>
@@ -235,9 +273,10 @@ export default function Employees() {
             </table>
           </div>
         ) : (
-          <Empty />
+          <Empty text="No employees match this search." />
         )}
       </div>
+
       {edit && (
         <Modal
           title={edit._id ? "Edit employee" : "Add employee"}
@@ -245,10 +284,13 @@ export default function Employees() {
         >
           <form onSubmit={save} className="grid gap-4 sm:grid-cols-2">
             {error && (
-              <div className="sm:col-span-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-                {error}
+              <div className="alert-error sm:col-span-2">
+                <AlertCircle size={17} className="mt-px shrink-0" />
+                <span>{error}</span>
               </div>
             )}
+
+            <SectionTitle>Identity</SectionTitle>
             {[
               ["employeeId", "Enroll ID"],
               ["name", "Full name"],
@@ -280,6 +322,19 @@ export default function Employees() {
               />
             </label>
             <label>
+              <span className="label">Status</span>
+              <select
+                className="field"
+                value={edit.status}
+                onChange={(e) => setEdit({ ...edit, status: e.target.value })}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </label>
+
+            <SectionTitle>Compensation</SectionTitle>
+            <label>
               <span className="label">Monthly salary</span>
               <input
                 className="field"
@@ -305,6 +360,47 @@ export default function Employees() {
                 <option value="USD">USD — US Dollar</option>
               </select>
             </label>
+            <label>
+              <span className="label">Late deduction</span>
+              <select
+                className="field"
+                value={edit.payrollSettings?.lateDeductionOverride || "inherit"}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    payrollSettings: {
+                      ...edit.payrollSettings,
+                      lateDeductionOverride: e.target.value,
+                    },
+                  })
+                }
+              >
+                <option value="inherit">Use global setting</option>
+                <option value="enabled">Enabled for employee</option>
+                <option value="disabled">Disabled for employee</option>
+              </select>
+            </label>
+            <label className="flex cursor-pointer items-center gap-2.5 self-end rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2.5">
+              <input
+                type="checkbox"
+                className="checkbox"
+                checked={Boolean(edit.payrollSettings?.overtimeEligible)}
+                onChange={(e) =>
+                  setEdit({
+                    ...edit,
+                    payrollSettings: {
+                      ...edit.payrollSettings,
+                      overtimeEligible: e.target.checked,
+                    },
+                  })
+                }
+              />
+              <span className="text-sm font-medium text-slate-700">
+                Eligible for paid overtime
+              </span>
+            </label>
+
+            <SectionTitle>Leave policy</SectionTitle>
             <label>
               <span className="label">Sick leaves granted yearly</span>
               <input
@@ -343,54 +439,8 @@ export default function Employees() {
                 }
               />
             </label>
-            <label>
-              <span className="label">Status</span>
-              <select
-                className="field"
-                value={edit.status}
-                onChange={(e) => setEdit({ ...edit, status: e.target.value })}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-            <label>
-              <span className="label">Late deduction</span>
-              <select
-                className="field"
-                value={edit.payrollSettings?.lateDeductionOverride || "inherit"}
-                onChange={(e) =>
-                  setEdit({
-                    ...edit,
-                    payrollSettings: {
-                      ...edit.payrollSettings,
-                      lateDeductionOverride: e.target.value,
-                    },
-                  })
-                }
-              >
-                <option value="inherit">Use global setting</option>
-                <option value="enabled">Enabled for employee</option>
-                <option value="disabled">Disabled for employee</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2 self-end pb-2">
-              <input
-                type="checkbox"
-                checked={Boolean(edit.payrollSettings?.overtimeEligible)}
-                onChange={(e) =>
-                  setEdit({
-                    ...edit,
-                    payrollSettings: {
-                      ...edit.payrollSettings,
-                      overtimeEligible: e.target.checked,
-                    },
-                  })
-                }
-              />
-              <span className="text-sm">Eligible for paid overtime</span>
-            </label>
-            <div className="flex justify-end gap-2 sm:col-span-2">
+
+            <div className="mt-1 flex justify-end gap-2 border-t border-slate-200 pt-4 sm:col-span-2">
               <button
                 type="button"
                 className="btn-secondary"

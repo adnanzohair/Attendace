@@ -1,6 +1,136 @@
-import { useState } from "react"; import { Link, useNavigate, useParams } from "react-router-dom"; import { api, messageOf } from "../../services/api";
-import AppFooter from "../../components/AppFooter";
-function Shell({children}){return <div className="flex min-h-screen flex-col bg-ink"><div className="grid flex-1 place-items-center p-4">{children}</div><AppFooter/></div>}
-function PasswordForm({reset=false}){const{token}=useParams(),[password,setPassword]=useState(""),[error,setError]=useState(""),navigate=useNavigate();async function submit(e){e.preventDefault();try{await api.post(`/employee-portal/auth/${reset?"reset-password":"activate"}`,{token,password});navigate("/employee/login")}catch(x){setError(messageOf(x))}}return <Shell><form onSubmit={submit} className="card w-full max-w-md p-8"><h1 className="text-2xl font-bold">{reset?"Reset password":"Create your password"}</h1><p className="muted mb-6 mt-2">Use at least 10 characters.</p>{error&&<div className="mb-4 text-red-700">{error}</div>}<input className="field mb-4" type="password" minLength="10" value={password} onChange={e=>setPassword(e.target.value)} required/><button className="btn-primary w-full">Save password</button></form></Shell>}
-export const EmployeeActivate=()=> <PasswordForm/>; export const EmployeeResetPassword=()=> <PasswordForm reset/>;
-export function EmployeeForgotPassword(){const[email,setEmail]=useState(""),[notice,setNotice]=useState(""),[error,setError]=useState("");async function submit(e){e.preventDefault();setError("");try{const{data}=await api.post("/employee-portal/auth/forgot-password",{email});setNotice(data.message)}catch(x){setError(messageOf(x))}}return <Shell><form onSubmit={submit} className="card w-full max-w-md p-8"><h1 className="text-2xl font-bold">Reset password</h1><p className="muted mb-6 mt-2">We will send a secure link if your email is registered.</p>{notice&&<div className="mb-4 rounded bg-green-50 p-3 text-green-800">{notice}</div>}{error&&<div className="mb-4 rounded bg-red-50 p-3 text-red-700">{error}</div>}<input className="field mb-4" type="email" value={email} onChange={e=>setEmail(e.target.value)} required/><button className="btn-primary w-full">Send reset link</button><Link className="mt-4 block text-center text-sm text-brand-700" to="/employee/login">Back to login</Link></form></Shell>}
+import { useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { api, messageOf } from "../../services/api";
+import AuthShell from "../../components/AuthShell";
+
+function PasswordForm({ reset = false }) {
+  const { token } = useParams(),
+    [password, setPassword] = useState(""),
+    [error, setError] = useState(""),
+    navigate = useNavigate();
+
+  async function submit(e) {
+    e.preventDefault();
+    try {
+      await api.post(`/employee-portal/auth/${reset ? "reset-password" : "activate"}`, {
+        token,
+        password,
+      });
+      navigate("/employee/login");
+    } catch (x) {
+      setError(messageOf(x));
+    }
+  }
+
+  return (
+    <AuthShell
+      variant="employee"
+      eyebrow="Employee Portal"
+      title={reset ? "Reset password" : "Create your password"}
+      subtitle="Choose a password with at least 10 characters."
+    >
+      <form onSubmit={submit} className="space-y-5">
+        {error && (
+          <div className="alert-error">
+            <AlertCircle size={17} className="mt-px shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div>
+          <label className="label" htmlFor="portal-password">
+            New password
+          </label>
+          <input
+            id="portal-password"
+            className="field"
+            type="password"
+            minLength="10"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <p className="hint">Minimum 10 characters.</p>
+        </div>
+
+        <button className="btn-primary w-full py-2.5">Save password</button>
+      </form>
+
+      <div className="mt-8 border-t border-slate-200 pt-5 text-center">
+        <Link className="link text-sm" to="/employee/login">
+          Back to login
+        </Link>
+      </div>
+    </AuthShell>
+  );
+}
+
+export const EmployeeActivate = () => <PasswordForm />;
+export const EmployeeResetPassword = () => <PasswordForm reset />;
+
+export function EmployeeForgotPassword() {
+  const [email, setEmail] = useState(""),
+    [notice, setNotice] = useState(""),
+    [error, setError] = useState("");
+
+  async function submit(e) {
+    e.preventDefault();
+    setError("");
+    try {
+      const { data } = await api.post("/employee-portal/auth/forgot-password", { email });
+      setNotice(data.message);
+    } catch (x) {
+      setError(messageOf(x));
+    }
+  }
+
+  return (
+    <AuthShell
+      variant="employee"
+      eyebrow="Employee Portal"
+      title="Reset password"
+      subtitle="We will send a secure link if your email is registered."
+    >
+      <form onSubmit={submit} className="space-y-5">
+        {notice && (
+          <div className="alert-success">
+            <CheckCircle2 size={17} className="mt-px shrink-0" />
+            <span>{notice}</span>
+          </div>
+        )}
+        {error && (
+          <div className="alert-error">
+            <AlertCircle size={17} className="mt-px shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div>
+          <label className="label" htmlFor="forgot-email">
+            Email
+          </label>
+          <input
+            id="forgot-email"
+            className="field"
+            type="email"
+            autoComplete="username"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+
+        <button className="btn-primary w-full py-2.5">Send reset link</button>
+      </form>
+
+      <div className="mt-8 border-t border-slate-200 pt-5 text-center">
+        <Link className="link text-sm" to="/employee/login">
+          Back to login
+        </Link>
+      </div>
+    </AuthShell>
+  );
+}

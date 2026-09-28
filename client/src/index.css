@@ -1,4 +1,344 @@
-@tailwind base;@tailwind components;@tailwind utilities;
-@layer base{body{@apply bg-sand text-slate-800 antialiased}input,select,textarea{@apply outline-none}button{@apply transition}}
-@layer components{.card{@apply rounded-2xl border border-slate-200 bg-white shadow-sm}.btn{@apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50}.btn-primary{@apply btn bg-brand-600 text-white hover:bg-brand-700}.btn-secondary{@apply btn border border-slate-300 bg-white hover:bg-slate-50}.field{@apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100}.label{@apply mb-1 block text-sm font-medium text-slate-700}.badge{@apply inline-flex rounded-full px-2.5 py-1 text-xs font-semibold}.table-wrap{@apply overflow-x-auto}.table{@apply min-w-full text-left text-sm}.table th{@apply whitespace-nowrap border-b bg-slate-50 px-4 py-3 font-semibold text-slate-600}.table td{@apply whitespace-nowrap border-b border-slate-100 px-4 py-3}.page-title{@apply text-2xl font-bold tracking-tight text-ink}.muted{@apply text-sm text-slate-500}}
-@media print{body{background:white}.no-print,aside,header{display:none!important}main>div{padding:0!important}.payslip{border:0!important;box-shadow:none!important;max-width:none!important}}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-sand font-sans text-slate-700 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply text-ink;
+    text-wrap: balance;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply outline-none;
+  }
+
+  button {
+    @apply transition-colors duration-150;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500/40 ring-offset-1 ring-offset-white;
+  }
+
+  ::selection {
+    @apply bg-brand-100 text-brand-900;
+  }
+
+  /* Numeric columns line up without touching any markup. */
+  td,
+  th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Slim, unobtrusive scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: theme("colors.slate.300") transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-full border-[3px] border-solid border-transparent bg-slate-300 bg-clip-content;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 bg-clip-content;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Components
+   --------------------------------------------------------------------------- */
+@layer components {
+  /* --- Surfaces ---------------------------------------------------------- */
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-card;
+  }
+
+  .card-hover {
+    @apply transition duration-150 hover:border-slate-300 hover:shadow-raised;
+  }
+
+  .card-header {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4;
+  }
+
+  .card-title {
+    @apply text-sm font-semibold tracking-tight text-ink;
+  }
+
+  .panel {
+    @apply rounded-xl border border-slate-200 bg-slate-50/70 p-4;
+  }
+
+  /* --- Page furniture ---------------------------------------------------- */
+  .page-header {
+    @apply mb-6 flex flex-wrap items-end justify-between gap-4;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold tracking-tightest text-ink;
+  }
+
+  .page-subtitle {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .eyebrow {
+    @apply text-2xs font-semibold uppercase tracking-[0.14em] text-slate-400;
+  }
+
+  .muted {
+    @apply text-sm text-slate-500;
+  }
+
+  .divider {
+    @apply my-5 h-px w-full bg-slate-200;
+  }
+
+  /* --- Buttons ----------------------------------------------------------- */
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold
+      transition duration-150 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800;
+  }
+
+  .btn-secondary {
+    @apply btn border border-slate-300 bg-white text-slate-700 shadow-card hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100;
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-600 hover:bg-slate-100 hover:text-ink;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-800;
+  }
+
+  .btn-subtle {
+    @apply btn bg-brand-50 text-brand-700 hover:bg-brand-100;
+  }
+
+  .btn-sm {
+    @apply gap-1.5 rounded-md px-2.5 py-1.5 text-xs;
+  }
+
+  .btn-icon {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition
+      hover:bg-slate-100 hover:text-ink disabled:pointer-events-none disabled:opacity-40;
+  }
+
+  .btn-icon-danger {
+    @apply btn-icon hover:bg-red-50 hover:text-red-600;
+  }
+
+  .link {
+    @apply font-semibold text-brand-700 underline-offset-4 transition-colors hover:text-brand-800 hover:underline;
+  }
+
+  /* --- Forms ------------------------------------------------------------- */
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-[0.06em] text-slate-500;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-ink shadow-card
+      transition duration-150 placeholder:text-slate-400
+      hover:border-slate-400
+      focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20
+      disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400;
+  }
+
+  .field-sm {
+    @apply rounded-md px-2.5 py-1.5 text-xs;
+  }
+
+  .hint {
+    @apply mt-1.5 text-xs leading-relaxed text-slate-500;
+  }
+
+  .checkbox {
+    @apply h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 text-brand-600 focus:ring-brand-500/30;
+  }
+
+  .toolbar {
+    @apply flex flex-wrap items-center gap-2.5;
+  }
+
+  /* --- Badges ------------------------------------------------------------ */
+  .badge {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold
+      ring-1 ring-inset;
+  }
+
+  .badge-neutral {
+    @apply bg-slate-50 text-slate-600 ring-slate-200;
+  }
+
+  .badge-success {
+    @apply bg-emerald-50 text-emerald-700 ring-emerald-200;
+  }
+
+  .badge-warning {
+    @apply bg-amber-50 text-amber-700 ring-amber-200;
+  }
+
+  .badge-danger {
+    @apply bg-red-50 text-red-700 ring-red-200;
+  }
+
+  .badge-info {
+    @apply bg-brand-50 text-brand-700 ring-brand-200;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600;
+  }
+
+  /* --- Tables ------------------------------------------------------------ */
+  .table-wrap {
+    @apply overflow-x-auto;
+  }
+
+  .table {
+    @apply min-w-full text-left text-sm;
+  }
+
+  .table th {
+    @apply whitespace-nowrap border-b border-slate-200 bg-slate-50 px-4 py-3
+      text-2xs font-semibold uppercase tracking-[0.08em] text-slate-500;
+  }
+
+  .table td {
+    @apply whitespace-nowrap border-b border-slate-100 px-4 py-3 align-middle text-slate-600;
+  }
+
+  .table tbody tr {
+    @apply transition-colors duration-100 hover:bg-slate-50/80;
+  }
+
+  .table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .table .cell-strong {
+    @apply font-medium text-ink;
+  }
+
+  /* --- Navigation -------------------------------------------------------- */
+  .nav-link {
+    @apply relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600
+      transition duration-150 hover:bg-slate-100 hover:text-ink;
+  }
+
+  .nav-link-active {
+    @apply bg-brand-50 font-semibold text-brand-700 hover:bg-brand-50 hover:text-brand-700;
+  }
+
+  /* Indigo indicator bar, desktop sidebar only. */
+  .sidebar-nav .nav-link-active::before {
+    content: "";
+    @apply absolute inset-y-1.5 -left-3 w-[3px] rounded-r-full bg-brand-600;
+  }
+
+  .nav-section {
+    @apply px-3 pb-1.5 pt-5 text-2xs font-semibold uppercase tracking-[0.14em] text-slate-400 first:pt-1;
+  }
+
+  /* --- Stats ------------------------------------------------------------- */
+  .stat-card {
+    @apply card card-hover flex items-start gap-3.5 p-4;
+  }
+
+  .stat-icon {
+    @apply grid h-10 w-10 shrink-0 place-items-center rounded-lg ring-1 ring-inset;
+  }
+
+  .stat-value {
+    @apply text-2xl font-semibold leading-none tracking-tightest text-ink;
+  }
+
+  .stat-label {
+    @apply mt-1.5 text-xs font-medium text-slate-500;
+  }
+
+  /* --- Feedback ---------------------------------------------------------- */
+  .alert {
+    @apply flex items-start gap-2.5 rounded-lg border px-3.5 py-3 text-sm;
+  }
+
+  .alert-error {
+    @apply alert border-red-200 bg-red-50 text-red-700;
+  }
+
+  .alert-success {
+    @apply alert border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .alert-warning {
+    @apply alert border-amber-200 bg-amber-50 text-amber-800;
+  }
+
+  .alert-info {
+    @apply alert border-brand-200 bg-brand-50 text-brand-800;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-md bg-slate-200;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Print
+   --------------------------------------------------------------------------- */
+@media print {
+  body {
+    background: white;
+  }
+
+  .no-print,
+  aside,
+  header,
+  nav,
+  footer {
+    display: none !important;
+  }
+
+  main > div {
+    padding: 0 !important;
+  }
+
+  .payslip {
+    border: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+  }
+}
