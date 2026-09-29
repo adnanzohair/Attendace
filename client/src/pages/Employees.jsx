@@ -62,13 +62,20 @@ const SectionTitle = ({ children }) => (
 export default function Employees() {
   const [data, setData] = useState([]),
     [search, setSearch] = useState(""),
+    [statusFilter, setStatusFilter] = useState("all"),
     [edit, setEdit] = useState(null);
   const [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [saving, setSaving] = useState(false);
-  const load = () =>
+  const load = (currentStatus = statusFilter, currentSearch = search) =>
     api
-      .get("/employees", { params: { search, limit: 500 } })
+      .get("/employees", {
+        params: {
+          search: currentSearch,
+          status: currentStatus === "all" ? undefined : currentStatus,
+          limit: 500,
+        },
+      })
       .then((r) => setData(r.data.data))
       .catch((e) => setError(messageOf(e)));
   useEffect(() => {
@@ -90,7 +97,7 @@ export default function Employees() {
         : await api.post("/employees", payload);
       setEdit(null);
       setNotice("Employee saved successfully.");
-      await load();
+      await load(statusFilter, search);
     } catch (e) {
       setError(messageOf(e));
     } finally {
@@ -149,11 +156,35 @@ export default function Employees() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            load();
+            load(statusFilter, search);
           }}
           className="flex flex-wrap items-center gap-2.5 border-b border-slate-200 p-4"
         >
-          <div className="relative min-w-[16rem] max-w-md flex-1">
+          <div className="flex items-center gap-1 rounded-lg bg-slate-100/80 p-1 text-xs font-medium text-slate-600">
+            {[
+              ["all", "All"],
+              ["active", "Active"],
+              ["inactive", "Inactive"],
+            ].map(([val, lbl]) => (
+              <button
+                key={val}
+                type="button"
+                className={`rounded-md px-3 py-1.5 transition-all ${
+                  statusFilter === val
+                    ? "bg-white font-semibold text-slate-900 shadow-sm"
+                    : "hover:text-slate-900 text-slate-600"
+                }`}
+                onClick={() => {
+                  setStatusFilter(val);
+                  load(val, search);
+                }}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative min-w-[14rem] max-w-md flex-1">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               size={17}
@@ -165,9 +196,27 @@ export default function Employees() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
+          <div className="w-36 sm:w-40">
+            <select
+              className="field"
+              value={statusFilter}
+              aria-label="Filter by employee status"
+              onChange={(e) => {
+                const nextStatus = e.target.value;
+                setStatusFilter(nextStatus);
+                load(nextStatus, search);
+              }}
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Only</option>
+              <option value="inactive">Inactive Only</option>
+            </select>
+          </div>
+
           <button className="btn-secondary">Search</button>
           <span className="ml-auto hidden text-xs font-medium text-slate-400 sm:block">
-            {data.length} employees
+            {data.length} {statusFilter === "all" ? "" : statusFilter} employees
           </span>
         </form>
 
@@ -273,7 +322,15 @@ export default function Employees() {
             </table>
           </div>
         ) : (
-          <Empty text="No employees match this search." />
+          <Empty
+            text={
+              statusFilter === "active"
+                ? "No active employees match this search."
+                : statusFilter === "inactive"
+                ? "No inactive employees match this search."
+                : "No employees match this search."
+            }
+          />
         )}
       </div>
 

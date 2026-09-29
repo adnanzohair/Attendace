@@ -42,11 +42,16 @@ function info(buffer) {
   return { sheetName: preferred, matrix, headerIndex, headers, mapping: machine ? { employeeId: "Enroll ID", name: "Name", department: "Dept" } : { employeeId: "Emp ID", name: "Name of Employees", fatherName: "Father Name", designation: "Designation", phone: "Mobile Number", email: "Email Address" } };
 }
 
-r.get("/", asyncHandler(async (req, res) => {
+export function buildEmployeeFilter(query = {}) {
   const filters = [];
-  if (req.query.search) filters.push({ $or: ["employeeId", "name", "department", "designation"].map((k) => ({ [k]: { $regex: req.query.search, $options: "i" } })) });
-  if (["active", "inactive"].includes(req.query.status)) filters.push({ status: req.query.status });
-  const employees = await Employee.find(filters.length ? { $and: filters } : {}).sort("name").limit(500).lean();
+  if (query.search) filters.push({ $or: ["employeeId", "name", "department", "designation"].map((k) => ({ [k]: { $regex: query.search, $options: "i" } })) });
+  if (["active", "inactive"].includes(query.status)) filters.push({ status: query.status });
+  return filters.length ? { $and: filters } : {};
+}
+
+r.get("/", asyncHandler(async (req, res) => {
+  const filterQuery = buildEmployeeFilter(req.query);
+  const employees = await Employee.find(filterQuery).sort("name").limit(500).lean();
   const year = new Date().getFullYear(), ids = employees.map((employee) => employee.employeeId);
   const leaveRecords = ids.length ? await Attendance.find({ employeeId: { $in: ids }, workDate: { $gte: `${year}-01-01`, $lte: `${year}-12-31` }, conditions: "Leave" }).select("employeeId leaveType conditions").lean() : [];
   const usage = new Map();
